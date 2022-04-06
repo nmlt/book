@@ -7,90 +7,33 @@ closures can capture values from the scope in which they’re defined. We’ll
 demonstrate how these closure features allow for code reuse and behavior
 customization.
 
-### Creating an Abstraction of Behavior with Closures
+### Capturing the Environment with Closures
 
-Let’s work on an example of a situation in which it’s useful to store a closure
-to be executed later. Along the way, we’ll talk about the syntax of closures,
-type inference, and traits.
+The first aspect of closures we're going to examine is that closures can
+capture aspects of the environment they're defined in for later use. Here's the
+scenario: A t-shirt company gives away a free shirt to someone on their mailing
+list every so often. People on the mailing list can optionally add their
+favorite color to their profile. If the person chosen to get the free shirt has
+their favorite color in their profile, they get that color shirt. If the person
+hasn't specified a favorite color, they get the color that the company
+currently has the most of.
 
-Consider this hypothetical situation: we work at a startup that’s making an app
-to generate custom exercise workout plans. The backend is written in Rust, and
-the algorithm that generates the workout plan takes into account many factors,
-such as the app user’s age, body mass index, exercise preferences, recent
-workouts, and an intensity number they specify. The actual algorithm used isn’t
-important in this example; what’s important is that this calculation takes a
-few seconds. We want to call this algorithm only when we need to and only call
-it once so we don’t make the user wait more than necessary.
-
-We’ll simulate calling this hypothetical algorithm with the function
-`simulated_expensive_calculation` shown in Listing 13-1, which will print
-`calculating slowly...`, wait for two seconds, and then return whatever number
-we passed in.
+There are many ways to implement this. For this example, we're going to use an
+enum called `ShirtColor` that has the variants `Red`, `Blue`, and `Yellow`. The
+company's inventory is represented by an `Inventory` struct that has a field
+named `shirts` that contains a `Vec<ShirtColor>` representing the shirts
+currently in stock. The method `shirt_giveaway` defined on `Inventory` gets the
+optional shirt color preference of the person getting the free shirt, and
+returns the shirt color the person will get. This setup is shown in Listing
+13-1:
 
 <span class="filename">Filename: src/main.rs</span>
 
-```rust
+```rust,noplayground
 {{#rustdoc_include ../listings/ch13-functional-features/listing-13-01/src/main.rs:here}}
 ```
 
-<span class="caption">Listing 13-1: A function to stand in for a hypothetical
-calculation that takes about 2 seconds to run</span>
-
-Next is the `main` function, which contains the parts of the workout app
-important for this example. This function represents the code that the app will
-call when a user asks for a workout plan. Because the interaction with the
-app’s frontend isn’t relevant to the use of closures, we’ll hardcode values
-representing inputs to our program and print the outputs.
-
-The required inputs are these:
-
-* An intensity number from the user, which is specified when they request
-  a workout to indicate whether they want a low-intensity workout or a
-  high-intensity workout
-* A random number that will generate some variety in the workout plans
-
-The output will be the recommended workout plan. Listing 13-2 shows the `main`
-function we’ll use.
-
-<span class="filename">Filename: src/main.rs</span>
-
-```rust
-{{#rustdoc_include ../listings/ch13-functional-features/listing-13-02/src/main.rs:here}}
-```
-
-<span class="caption">Listing 13-2: A `main` function with hardcoded values to
-simulate user input and random number generation</span>
-
-We’ve hardcoded the variable `simulated_user_specified_value` as 10 and the
-variable `simulated_random_number` as 7 for simplicity’s sake; in an actual
-program, we’d get the intensity number from the app frontend, and we’d use the
-`rand` crate to generate a random number, as we did in the Guessing Game
-example in Chapter 2. The `main` function calls a `generate_workout` function
-with the simulated input values.
-
-Now that we have the context, let’s get to the algorithm. The function
-`generate_workout` in Listing 13-3 contains the business logic of the
-app that we’re most concerned with in this example. The rest of the code
-changes in this example will be made to this function.
-
-<span class="filename">Filename: src/main.rs</span>
-
-```rust
-{{#rustdoc_include ../listings/ch13-functional-features/listing-13-03/src/main.rs:here}}
-```
-
-<span class="caption">Listing 13-3: The business logic that prints the workout
-plans based on the inputs and calls to the `simulated_expensive_calculation`
-function</span>
-
-The code in Listing 13-3 has multiple calls to the slow calculation function.
-The first `if` block calls `simulated_expensive_calculation` twice, the `if`
-inside the outer `else` doesn’t call it at all, and the code inside the
-second `else` case calls it once.
-
-The desired behavior of the `generate_workout` function is to first check
-whether the user wants a low-intensity workout (indicated by a number less than
-25) or a high-intensity workout (a number of 25 or greater).
+<span class="caption">Listing 13-1: Framework of the shirt company giveaway situation</span>
 
 Low-intensity workout plans will recommend a number of push-ups and sit-ups
 based on the complex algorithm we’re simulating.
