@@ -1,5 +1,5 @@
 // ANCHOR: here
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 enum ShirtColor {
     Red,
     Blue,
@@ -11,38 +11,66 @@ struct Inventory {
 
 impl Inventory {
     fn giveaway(&self, user_preference: Option<ShirtColor>) -> ShirtColor {
-        match user_preference {
-            Some(pref) => pref,
-            None => self.most_stocked(),
-        }
+        user_preference.unwrap_or_else(|| self.last_stocked())
     }
 
-    fn most_stocked(&self) -> ShirtColor {
-        let mut num_red = 0;
-        let mut num_blue = 0;
-
-        for color in &self.shirts {
-            match color {
-                ShirtColor::Red => num_red += 1,
-                ShirtColor::Blue => num_blue += 1,
-            }
-        }
-        if num_red > num_blue {
-            ShirtColor::Red
-        } else {
-            ShirtColor::Blue
-        }
+    fn last_stocked(&self) -> ShirtColor {
+        *self.shirts.last().expect("need to have shirts to do a giveaway")
     }
 }
 // ANCHOR_END: here
 
 #[test]
 fn testme() {
-    let store = Inventory { shirts: vec![ShirtColor::Red, ShirtColor::Blue, ShirtColor::Blue]};
+    let store = Inventory {
+        shirts: vec![ShirtColor::Red, ShirtColor::Blue, ShirtColor::Blue],
+    };
 
     assert_eq!(store.giveaway(Some(ShirtColor::Red)), ShirtColor::Red);
     assert_eq!(store.giveaway(Some(ShirtColor::Blue)), ShirtColor::Blue);
     assert_eq!(store.giveaway(None), ShirtColor::Blue);
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+enum DisplayMode {
+    Light,
+    Dark,
+}
+
+struct User {
+    ui_preference: Option<DisplayMode>,
+}
+
+enum Time {
+    Day,
+    Night,
+}
+
+impl User {
+    fn current_time(&self) -> Time {
+        Time::Night
+    }
+
+    fn display_mode(&self) -> DisplayMode {
+        self.ui_preference.unwrap_or_else(|| {
+            match self.current_time() {
+                Time::Day => DisplayMode::Light,
+                Time::Night => DisplayMode::Dark,
+            }
+        })
+    }
+}
+
+#[test]
+fn other_test() {
+    let u = User { ui_preference: Some(DisplayMode::Light) };
+    assert_eq!(u.display_mode(), DisplayMode::Light);
+
+    let u = User { ui_preference: Some(DisplayMode::Dark) };
+    assert_eq!(u.display_mode(), DisplayMode::Dark);
+
+    let u = User { ui_preference: None };
+    assert_eq!(u.display_mode(), DisplayMode::Dark);
 
 }
 
